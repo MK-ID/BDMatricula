@@ -293,6 +293,22 @@ EXECUTE usp_Alumno_TableroMatriculas
 go
 
 
+--porcentaje de alumnos por mujeres y varones
+SELECT Escuela,
+    cast(CAST((SUM(CASE WHEN Sexo   = 'F' THEN 1 ELSE 0 END)*100.0)/COUNT(*) as numeric(36,2))as varchar)+ '%' as PorcentajeMujeres,
+    cast(CAST((SUM(CASE WHEN Sexo   = 'M' THEN 1 ELSE 0 END)*100.0)/COUNT(*) as numeric(36,2))as varchar)+ '%' as PorcentajeVarones
+    from vAlumnos GROUP by CodEscuela,Escuela
+	ORDER by Escuela
+--numero de aprobados y desaporbados por escuela del semestre 2020-II
+select X.Nombre, SUM(case when M.Nota<14 and M.SemAcademico = '2020-II' then 1 else 0 end)as Desaprobados,
+SUM(case when M.Nota>=14 and M.SemAcademico = '2020-II' then 1 else 0 end)as Aprobados
+from TEscuela X inner join TAlumno Y
+on (X.codEscuela=Y.CodEscuela)
+inner join TMatricula M
+on(M.CodAlumno = Y.CodAlumno)
+group by X.Nombre
+
+
 --lista de alumnos que pertenecen al quinto superior
 IF OBJECT_ID('usp_Alumno_QuintoSuperior') is not null
     DROP PROCEDURE usp_Alumno_QuintoSuperior
@@ -304,7 +320,7 @@ BEGIN
     BEGIN TRY
     BEGIN
         select Alumno,Escuela,NomFacultad,M.Nota as Promedio  from vAlumnos A INNER join TMatricula M 
-        ON(M.CodAlumno=A.CodAlumno) WHERE SemAcademico='2020-II' AND M.Nota  between 15 and 20
+        ON(M.CodAlumno=A.CodAlumno) WHERE SemAcademico='2020-II' AND M.Nota  between 16 and 20
         order by M.Nota DESC
     end
     COMMIT TRANSACTION Trans
@@ -320,7 +336,9 @@ go
 EXECUTE usp_Alumno_QuintoSuperior
 go
 
---consulta para exponer
-select top 503 Alumno,Escuela,NomFacultad,M.Nota as Promedio  from vAlumnos A INNER join TMatricula M 
-ON(M.CodAlumno=A.CodAlumno) WHERE SemAcademico='2020-II' AND M.Nota  between 14 and 20
-order by M.Nota DESC
+--cantidad de alumnos del semestre 2020-II
+SELECT COUNT(*) from vAlumnos A INNER join TMatricula M 
+ON(M.CodAlumno=A.CodAlumno) WHERE SemAcademico='2020-II'
+--cantidad de alumnos que pertencen al quinto superior
+SELECT CEILING(COUNT(*)/5.0) from vAlumnos A INNER join TMatricula M 
+ON(M.CodAlumno=A.CodAlumno) WHERE SemAcademico='2020-II'
